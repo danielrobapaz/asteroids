@@ -50,26 +50,44 @@ updatePlayer:
 	beq	$t3, $t5, downMove	# la nave se mueve hacia abajo
 	beq	$t3, $t6, leftMove	# la nave se mueve hacia la izq
 	
-upMove:
-	li	$t3, -1
+upMove:					# se actualiza la nueva posicion del jugador
+					# se efectua el warp en caso de que $t1 <= -1
+	li	$t3, -1		
 	mul	$t0, $t0, $t3
 	add	$t1, $t1, $t0
+	li	$t3, 1
+	bge 	$t1, $t3, endUpdatePlayer	# si $t1 >= 0 no se efectua warp
+	li 	$t3, 8
+	add	$t1, $t3, $t1
 	j endUpdatePlayer
 	
-rigthMove: 
+rigthMove: 				# se acutaliza la nueva poscicion del jugador
+					# se efectua el warp en caso de que $t2 > 23
 	add	$t2, $t2, $t0
+	li	$t3, 22
+	ble	$t2, $t3, endUpdatePlayer
+	sub	$t2, $t2, $t3
 	j endUpdatePlayer
 	
-downMove:
+downMove:				# se acualiza la nueva posicion del jugador
+					# se efectua warp en caso de que $t1 > 8
 	add	$t1, $t1, $t0
+	li	$t3, 8
+	ble	$t1, $t3, endUpdatePlayer
+	sub	$t1, $t1, $t3
 	j endUpdatePlayer
 	
-leftMove:
+leftMove:				# se acutaliza la nueva posicion del jugador
+					# se ejecuta el warp en caso de que $t2 < 0
 	li	$t3, -1
 	mul	$t0, $t0, $t3
 	add 	$t2, $t2, $t0
+	li	$t3, 1
+	bge	$t2, $t3, endUpdatePlayer
+	li	$t3, 22
+	add	$t2, $t3, $t2
 	j endUpdatePlayer
-	
+	 
 endUpdatePlayer:
 	la	$t0, playerPos
 	sb	$t1, ($t0)
@@ -79,7 +97,6 @@ endUpdatePlayer:
 	jr	$ra
 	
 	
-
 # Se limpia del campo la posicion acual de jugador
 cleanPlayer: 
 	la 	$t0, playerPos
@@ -210,7 +227,6 @@ updateGrid:
 	
 	jr 	$ra
 
-
 ##################### main ###############################
 main:	
 	li $t9, 100
@@ -225,7 +241,7 @@ loop:
 	jal 	updateGrid			
 	jal 	printGrid		
 	
-	li	$a0, 400
+	li	$a0, 200
 	li	$v0, 32
 	syscall
 	

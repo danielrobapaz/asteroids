@@ -7,11 +7,11 @@
 
 .data
 	# datos sobre la nave
-	rotacionesNave: 	.asciiz "A>V<"
-	playerPos: 		.byte 5, 12 	# (row, col)
-	playerSpeed: 		.byte 0		# velocidad de la nave (> 0 aunemnta fila o columna, < 0 disminuye fila o col)	
-	playerDirection: 	.byte 0		# direccion de la nave
-	playerLives: 		.byte 3		# vidas del jugador
+#	rotacionesNave: 	.asciiz "A>V<"
+#	playerPos: 		.byte 5, 12 	# (row, col)
+#	playerSpeed: 		.byte 0		# velocidad de la nave (> 0 aunemnta fila o columna, < 0 disminuye fila o col)	
+#	playerDirection: 	.byte 0		# direccion de la nave
+#	playerLives: 		.byte 3		# vidas del jugador
 	
 	# datos del mapa
 	grid: 			.asciiz "#########################\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#########################\n"
@@ -116,74 +116,8 @@ cleanPlayer:
 	sb 	$t1, ($t0)		# es escribe un espacio en blanco
 
 	jr 	$ra
-	
-# Se recibe un input que puede ser a,w,s,d o p. Dependiendo del input recibido
-# se modifica en memoria la rotacion de la nave y su velocidad.
-# Input: No se espera ningun registro
-controlPlayer:
-	la 	$a0, input
-	li 	$a1, 2
-	li 	$v0, 8
-	syscall			# leer input
-	
-	lb 	$t0, ($a0)
-	
-	li 	$t1, 97		# ascii a
-	li	$t2, 100	# ascii d
-	li	$t3, 115	# ascii s
-	li 	$t4, 119	# ascii w
-	
-	la	$t5, playerDirection
-	lb	$t6, ($t5)	# $t6 = player.direction de rotacion
-	
-	beq	$t0, $t1, controlRotateLeft
-	beq	$t0, $t2, controlRotateRigth
-	beq	$t0, $t3, controlBreak
-	beq	$t0, $t4, controlAcelerate
-	
-	jr 	$ra		# no se hace nada
-	
-controlRotateLeft:
-	beqz	$t6, controlRotateLeftReset
-	addi	$t6, $t6, -1
-	sb	$t6, ($t5)
-	j endControlPlayer
-controlRotateLeftReset:
-	li 	$t6, 3
-	sb	$t6, ($t5)	# escribimos en memoria
-	j endControlPlayer
-	
-controlRotateRigth:
-	li	$t1, 3
-	beq 	$t6, $t1, controlRotateRigthReset
-	addi	$t6, $t6, 1
-	sb	$t6, ($t5)
-	j endControlPlayer
-	
-controlRotateRigthReset:
-	li 	$t6, 0
-	sb	$t6, ($t5)	# escribimos en memoria
-	j endControlPlayer
-	 
-controlAcelerate: 
-	la	$t0, playerSpeed
-	lb	$t1, ($t0)
-	li	$t2, 3
-	beq 	$t1, $t2, endControlPlayer	# no se puede acelerar mas
-	addi	$t1, $t1, 1
-	sb	$t1, ($t0)
-	j endControlPlayer
-	
-controlBreak:
-	la	$t0, playerSpeed
-	lb	$t1, ($t0)
-	beqz	$t1, endControlPlayer	# no se puede frenar mas
-	addi	$t1, $t1, -1
-	sb 	$t1, ($t0)
-	j endControlPlayer
 
-endControlPlayer:
-	jr 	$ra
+
 # Dadas las nuevas posiciones de los elementos en la pantalla
 # se imprme en pantalla los cambios durante un refrescamiento 
 # del programa
@@ -229,23 +163,49 @@ updateGrid:
 
 ##################### main ###############################
 main:	
-	li $t9, 100
+	# inicializamos el manejador de interrupciones
+	# Inicializamos cause
+	li	$a0, 0x8101
+	mtc0	$a0, $13
+	
+	# inicializamos reciever control
+	li	$a0, 0xffff0000
+	lw	$a1, ($a0)
+	ori	$a1, $a1, 2
+	sw	$a1, ($a0)
+	
+	lw 	$a1, 8($a0)
+	ori	$a1, $a1, 1
+	sw	$a1, 8($a0)
+	
+	jal	updatePlayer
 	jal 	printGrid
 	
 loop:
-	beqz $t9, endLoop
+	# Inicializamos el temporizador
+	li	$v0, 30
+	syscall			# time
+	move	$s6, $a1
 	
 	addi $t9, $t9, -1
 	
-	jal	controlPlayer
 	jal 	updateGrid			
 	jal 	printGrid		
 	
-	li	$a0, 200
-	li	$v0, 32
-	syscall
+	li	$v0, 30
+	syscall			# time
+	sub 	$s6, $s6, $a1	# elapsed time
 	
+	li	$t7, 200
+	sub	$a0, $t7, $t6
+	bltz	$a0, loop	# si el tiempo restante es negativo se hace la iteracion	
+				# de inmediato
+				
+	li	$v0, 32
+	syscall			#sleep
 	j loop
 endLoop:
 	li 	$t0, 1
 	
+# Incluimos los demas archivos
+.include "controlPlayer.asm"

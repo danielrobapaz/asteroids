@@ -1,71 +1,108 @@
 .kdata  # kernel data 
 	s1: .word 0
 	s2: .word 0 
-	new_line: .asciiz "\n"    
-	msg: .asciiz "interrupcion"
-j main
-.text  
-.globl main 
- 
- main:  
- 	# Inicializamos el registro status
-
- 	
- 	# inicialimamos el registro couse
- 	li	$a0, 0x8101
- 	mtc0	$a0, $13
- 	
- 	# iniciliazamos el reciever control
- 	li 	$a0, 0xffff0000
- 	lw	$a1, ($a0)
- 	ori	$a1, $a1, 2
- 	sw	$a1, ($a0)
-	li $t0, 10
-here:	j here
-	li $t0, 1
+	girarDer: .asciiz "girar der 90 grados\n"
+	girarIzq: .asciiz "girar izq 90 grados\n"
+	acelerar: .asciiz "acelerar\n"
+	frenar:	 .asciiz "frenar\n"
 	
-
-############### manejador de excepciones #######################
-.ktext 0x80000180 # kernel code starts here    
-	sw $a0, s1	# guardamos unos registros
-	sw $v0, s2	
+.data
 	
-	mfc0	$k0, $13			# obtenemos el registro de causa
-	srl	$a0, $k0, 2
-	andi 	$a0, $a0, 0x7C			# obtenemos el excode
-	bnez	$a0, ret			# si el excode es cero, hubo una excpecion
+.text
+main:
+	# Inicializamos cause
+	li	$a0, 0x8101
+	mtc0	$a0, $13
 	
-	# se redirige la interrupcion si proviene del teclado
-	# (Keyboard: bit 8 de $13)
-	andi	$k0, $k0, 0x0100
-	bnez	$a0, teclado
-	j endInterrupciones
+	# inicializamos reciever control
+	li	$a0, 0xffff0000
+	lw	$a1, ($a0)
+	ori	$a1, $a1, 2
+	sw	$a1, ($a0)
 	
-teclado:
-	# reinicia el bit 8 de $13
+	lw 	$a1, 8($a0)
+	ori	$a1, $a1, 1
+	sw	$a1, 8($a0)
+	
+loop: j loop
+	li $v0, 10
+	syscall	#exit program
+	
+	
+# Sobreecribimos el manejador de excepciones 
+.ktext	0x80000180
+beginHandler:
+	# Almancenamos unos registros en memoria del kernel
+	sw	$a0, s1
+	sw	$v0, s2
+	
+	# Vemos el registro causa para determinar si hubo una interrupcion
+	mfc0	$a0, $13
+	andi	$a0, 0x0000007C	# enmascaramos el exCode
+	bnez	$a0, ret	
+	
+	# redirigimos las interrupciones del teclado
+	mfc0	$k0, $13	# obtenemso cause
+	andi	$k0, 0x00000400	# revsamos si la interrupcion fue de teclado
+	bnez	$k0, ret
+	
+	# reiniciamos el bit 8 de cause
 	mfc0	$k0, $13
-	andi	$k0, $k0, 0xFEFF
-	mtc0	$k0, $13
+	andi	$k0, 0xfeff
+	mtc0 	$k0, $13
 	
-	lw	$a0, 0xFFF0004
-	li	$v0, 11
+	lw	$a0, 0xffff0004	# obtenemos la tecla presionada del jugador
+	
+	beq	$a0, 'w', controlAcelerar
+	beq	$a0, 'W', controlAcelerar
+	
+	beq	$a0, 's', controlFrenar
+	beq	$a0, 'S', controlFrenar
+	
+	beq	$a0, 'a', rotarIzq
+	beq	$a0, 'A', rotarIzq
+	
+	beq	$a0, 'd', rotarDer
+	beq	$a0, 'D', rotarDer
+	
+	j ret	# se presiono otra tecla se omite
+	
+controlAcelerar:
+	la	$a0, acelerar
+	li	$v0, 4
 	syscall
+	j ret
 	
-	j endInterrupciones
+controlFrenar:
+	la	$a0, frenar
+	li	$v0, 4
+	syscall
+	j ret
 	
+rotarIzq:
+	la	$a0, girarIzq
+	li	$v0, 4
+	syscall
+	j ret
+	
+rotarDer:
+	la	$a0, girarDer
+	li	$v0, 4
+	syscall
+	j ret
 ret:
-	mfc0	$k0, $14
-	addi	$k0, $k0, 4
+
+	mfc0 	$k0, $14
+	#addi	$k0, $k0, 4
 	mtc0	$k0, $14
 	
-endInterrupciones:
-	mtc0 	$0, $13 	# se limpia cause
-	lw 	$a0, s1
-	lw	$v0, s2
-	
-	li	$k0, 0x8101
-	mtc0	$k0, $12	# se restaura status
-	
-	eret
+endHandler:
+	 # recuperamos los registro
+	 lw	$a0, s1
+	 lw	$v0, s2
+	 
+	 eret
 	
 	
+.data
+	adios: .word 199

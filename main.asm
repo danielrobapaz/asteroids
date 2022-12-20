@@ -15,11 +15,6 @@
 	refresh:		.asciiz "\n\n\n\n\n\n\n\n\n\n\n\n"
 	gameOverStr:		.asciiz "Game Over. Puntaje final: "
 	
-	# Datos de la vida.
-	liveExist:			.byte 	0
-	livePos:			.space 	2	# byte 1 = live.row		 byte 2 = live.col
-	liveSpeed:			.space	2	# byte 1 = live.speedX		 byte 2 = live.speedY
-	
 .text
 j main
 
@@ -253,6 +248,8 @@ loop:
 	lb	$t0, playerLives
 	beqz	$t0, endLoop
 	
+	# Verificamos si se generan vidas o asteroides
+	jal	createLive
 	j loop
 endLoop:
 	la	$a0, gameOverStr
@@ -265,3 +262,4 @@ endLoop:
 	
 # Incluimos los demas archivos
 .include "controlPlayer.asm"
+.include "lives.asm"

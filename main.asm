@@ -6,17 +6,19 @@
 
 
 .data
-	# datos sobre la nave
-#	rotacionesNave: 	.asciiz "A>V<"
-#	playerPos: 		.byte 5, 12 	# (row, col)
-#	playerSpeed: 		.byte 0		# velocidad de la nave (> 0 aunemnta fila o columna, < 0 disminuye fila o col)	
-#	playerDirection: 	.byte 0		# direccion de la nave
-#	playerLives: 		.byte 3		# vidas del jugador
-	
 	# datos del mapa
 	grid: 			.asciiz "#########################\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#########################\n"
+	scoreStr:		.asciiz	"Puntaje: "
+	livesStr:		.asciiz "\nVidas: "
+	breakLine:		.asciiz "\n"
 	blankSpace:		.asciiz " "
-	input:			.space 2
+	refresh:		.asciiz "\n\n\n\n\n\n\n\n\n\n\n\n"
+	gameOverStr:		.asciiz "Game Over. Puntaje final: "
+	
+	# Datos de la vida.
+	liveExist:			.byte 	0
+	livePos:			.space 	2	# byte 1 = live.row		 byte 2 = live.col
+	liveSpeed:			.space	2	# byte 1 = live.speedX		 byte 2 = live.speedY
 	
 .text
 j main
@@ -25,7 +27,7 @@ j main
 # Output: Muestra en pantalla el mapa con el estado actual del juego
 printGrid:
 	la 	$a0, grid
-	li 	$v0, 4
+	li	$v0, 4
 	syscall				# print
 	
 	jr $ra
@@ -160,7 +162,46 @@ updateGrid:
 	sb 	$t0, ($t2)
 	
 	jr 	$ra
+	
+# Se actualiza el string que corresponde al puntaje y las vidas del jugador
+# Input: Se espera el puntaje en el registro $a3
+# Output: None
+printScore:
+	# imprimos un el puntaje
+	la	$a0, scoreStr
+	li	$v0, 4
+	syscall	 
+	move	$a0, $a3
+	li	$v0, 1
+	syscall
+	
+	# Imprimimos las vidas del jugador
+	la	$a0, livesStr
+	li	$v0, 4
+	syscall
+	lb	$a0, playerLives
+	li	$v0, 1
+	syscall
+	
+	# imprimos un salto de linea
+	la	$a0, breakLine
+	li	$v0, 4
+	syscall
+	
+	jr	$ra
+	
 
+# Se muestra una sucecion de saltos de linea para simular un refrescamiento de la consola
+# Input: No se espera ningun registro
+# Output: Una sicecion de saltos de linea
+printRefresh:
+	la	$a0, refresh
+	li	$v0, 4
+	syscall
+	
+	jr 	$ra
+	
+	
 ##################### main ###############################
 main:	
 	# inicializamos el manejador de interrupciones
@@ -178,19 +219,23 @@ main:
 	ori	$a1, $a1, 1
 	sw	$a1, 8($a0)
 	
-	jal	updatePlayer
-	jal 	printGrid
+	li	$a3, 0		# inicializamos el puntaje
 	
+	jal	updatePlayer
+	jal 	printScore
+	jal 	printGrid
 loop:
+	addi	$a3, $a3, 1		# aumentamos el puntaje
 	# Inicializamos el temporizador
 	li	$v0, 30
 	syscall			# time
 	move	$s6, $a1
 	
-	addi $t9, $t9, -1
 	
 	jal 	updateGrid			
-	jal 	printGrid		
+	jal 	printScore
+	jal 	printGrid
+	jal 	printRefresh	
 	
 	li	$v0, 30
 	syscall			# time
@@ -203,8 +248,19 @@ loop:
 				
 	li	$v0, 32
 	syscall			#sleep
+	
+	# Verificamos si le quedan vidas al jugador
+	lb	$t0, playerLives
+	beqz	$t0, endLoop
+	
 	j loop
 endLoop:
+	la	$a0, gameOverStr
+	li	$v0, 4
+	syscall
+	move	$a0, $a3
+	li	$v0, 1
+	syscall
 	li 	$t0, 1
 	
 # Incluimos los demas archivos

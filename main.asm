@@ -21,10 +21,19 @@ j main
 # Input: No recibe argumentos
 # Output: Muestra en pantalla el mapa con el estado actual del juego
 printGrid:
-	la 	$a0, grid
-	li	$v0, 4
-	syscall				# print
-	
+	la $a0, grid  #Se carga la direccion del campo de juego
+	lui $t0, 0xffff
+	li $t1, 260  #Contador del ciclo
+printGridLoop:
+	lb $t2, ($a0)  #Se carga el caracter actual del mapa
+consolePoll:
+	lw $t3, 8($t0)  #Se carga el bit de estado del transmitter
+	andi $t3, $t3, 0x0001
+	beqz $t3, consolePoll  #Si la consola aun no esta lista se vuelve a revisar
+	sw $t2, 12($t0)   #Se imprime el caracter
+	addi $a0, $a0, 1  #Se avanza al siguiente caracter del mapa
+	addi $t1, $t1, -1 
+	bnez $t1, printGridLoop
 	jr $ra
 
 # Se actualiza la posicion de la nave

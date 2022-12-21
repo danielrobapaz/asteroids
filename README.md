@@ -48,6 +48,9 @@ Solo se muestra un asteroide a la vez. Esto es que, de darse el momento en el qu
 un asteroide este en el mapa y se deba generar otro asteroide, este segundo asteroide
 no se generará.
 
+Adicionalmente, no se pudo implementar la función de pausa, por lo que el juego no tiene 
+forma de detenerse además de perder o interrumpir manualmente la ejecución del código.
+
 **No se optó por puntos adicionales**
 
 # Sobre la implementacion del programa

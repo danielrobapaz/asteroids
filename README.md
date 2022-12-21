@@ -27,7 +27,8 @@ mapa y la colision de la vida con el jugador funciona correctamente.
 ## Asteroides.
 Los asteroides se generan cada 5 segundos (25 refrescamientos). Al igual que con las 
 vidas, se le asigna una posicion y velocidad aleatoria. Los asteroides salen desde el
-borde del mapa y la colision de la vida con el asteroide funciona correctamente.
+borde del mapa y la colision de la vida con el asteroide funciona correctamente. Los 
+asteroides no salen suavemente desde el borde del mapa.
 
 ## Puntaje.
 El puntaje aumenta con cada refrescamiento como es requerido en el proyecto. El 
@@ -40,17 +41,12 @@ game over y el puntaje obtenido.
 ## En general.
 El input del programa se espera en la consola MMIO de MARS. Antes de empezar la 
 ejecucion del juego se debe de conectar manualmente esta consola a MIPS. La salida
-del programa se muestra en la consola estandar (Run I/O) de MIPS. 
-
-El refrescamiento se simula imprimiendo una sucesion de "\n" en la consola de MIPS.
-El puntaje y las vidas del jugador se muestran en lineas aparte.
+del programa se muestra en esa misma consola. El puntaje y la cantidad de vidas
+del jugador se muestran en la cónsola estanda (Run I/O) de MARS.
 
 Solo se muestra un asteroide a la vez. Esto es que, de darse el momento en el que 
 un asteroide este en el mapa y se deba generar otro asteroide, este segundo asteroide
 no se generará.
-
-En algunos casos la posicion anterior de la vida o de la nave no se borra del mapa
-y se muestra su posicion previa y actual de ambos elementos.
 
 **No se optó por puntos adicionales**
 

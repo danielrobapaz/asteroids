@@ -131,6 +131,12 @@ updateGrid:
 	lw	$ra, 0($sp)
 	addi	$sp, $sp, 4
 	
+	addi	$sp, $sp, -4
+	sw	$ra, 0($sp)
+	jal	cleanLive		# se borra la posicion anterior del jugador
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 4
+	
 	# Actualizamos la posiccion e los elementos
 	addi 	$sp, $sp, -4
 	sw	$ra, 0($sp)
@@ -138,6 +144,32 @@ updateGrid:
 	lw	$ra, 0($sp)
 	addi	$sp, $sp, 4
 	
+	addi	$sp, $sp, -4
+	sw	$ra, 0($sp)
+	jal 	updateLive		# se actualiza la nueva posicion de la vida
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 4
+	
+	######################### se escribe en el campo la vida
+	# verificamos que haya una vida
+	lb	$t0, liveExist
+	beqz	$t0, printPlayer
+	
+	la	$t0, livePos
+	lb	$t1, ($t0)	# live.x
+	lb	$t2, 1($t0)	# live.y
+	
+	li 	$t0,  26
+	mul	$t2, $t2, $t0
+	add	$t1, $t1, $t2		# $t1 = posicion en donde se escribira la vida
+	
+	la	$t0, grid
+	add	$t0, $t0, $t1,
+	lb	$t1, liveSymbol
+	sb	$t1, ($t0)		
+
+printPlayer: 	
+	######################### se escribe en el campo la nave
 	la 	$t0, playerPos
 	lb 	$t1, ($t0)		# $t1 = player.row
 	addi 	$t0, $t0, 1
@@ -153,10 +185,47 @@ updateGrid:
 	lb	$t0, ($t0)		# caracter de la rotacion de la nave
 	
 	la 	$t2, grid
-	add 	$t2, $t2, $t1 
+	add 	$t2, $t2, $t1
+	
+	# Verificamos colisiones
+	lb	$t3, ($t2)
+	lb	$t4, blankSpace
+	bne	$t3, $t4, collisions	# si el caracter en donde se imprimira la nave no es un espacio en blanco se revisa la colission
 	sb 	$t0, ($t2)
+	jr 	$ra
+
+collisions:
+	# verificamos las colisiones
+	# en $t3 se encuentra el byte del que ocasiono la collision
+	lb	$t4, liveSymbol
+	beq	$t3, $t4, collisionLive
+	#
+	# aqui iria lo de la nave
+	#
+	#
+	#
+	jr	$ra	# la colision ocurrio con la misma nave
+collisionLive:
+	# se le suma una vida al jugador, se limpia la vida y se elimina la vida existente
+	la	$t3, playerLives
+	lb	$t4, ($t3)
+	addi	$t4, $t4, 1
+	sb	$t4, ($t3)
+	
+	la	$t3, liveExist
+	lb	$t4, ($t3)
+	addi	$t4, $t4, -1
+	sb	$t4, ($t3)
+	
+	addi	$sp, $sp, -4
+	sw	$ra ($sp)
+	jal 	cleanLive
+	lw	$ra, ($sp)
+	addi	$sp, $sp, 4
 	
 	jr 	$ra
+	
+	
 	
 # Se actualiza el string que corresponde al puntaje y las vidas del jugador
 # Input: Se espera el puntaje en el registro $a3
@@ -221,11 +290,19 @@ main:
 	jal 	printGrid
 loop:
 	addi	$a3, $a3, 1		# aumentamos el puntaje
+	
+	li	$t0, 300
+	div	$a3, $t0
+	mfhi	$t0
+	bnez	$t0, continueLoop
+	
+	jal 	createLive
+	
+continueLoop:
 	# Inicializamos el temporizador
 	li	$v0, 30
 	syscall			# time
 	move	$s6, $a1
-	
 	
 	jal 	updateGrid			
 	jal 	printScore
@@ -247,9 +324,7 @@ loop:
 	# Verificamos si le quedan vidas al jugador
 	lb	$t0, playerLives
 	beqz	$t0, endLoop
-	
-	# Verificamos si se generan vidas o asteroides
-	jal	createLive
+
 	j loop
 endLoop:
 	la	$a0, gameOverStr

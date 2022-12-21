@@ -1,7 +1,5 @@
 .data
 
-grid: .asciiz "#########################\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#                       #\n#########################\n"
-
 #Informacion del asteroide 1
 asteroid1InField: .space 1 #Indica si hay o no un asteroide en el campo
 asteroid1PosX: .space 1 #Posicion en X del asteroide, varia entre 1 y 20
@@ -257,74 +255,3 @@ printAsteroidLoop:
 #que no esta en el campo
 noAsteroid:
 	jr $ra
-	
-main:
-	li $a3, 0  ##contador de puntos
-	
-loop:
-	li $v0, 30
-	syscall
-	move $t8, $a0 #Se almacena el tiempo al comienzo del loop
-	
-	addi $a3, $a3, 1
-	
-	#se verifica si han pasado 5 segundos a traves del contador de puntaje
-	div $t0, $a3, 25
-	mfhi $t0 
-	beqz $t0, createAsteroidTrue #Se crea un asteroide si han transcurrido 5 segundos
-	j continueLoop
-createAsteroidTrue:	
-	jal createAsteroid
-continueLoop:
-	#Limpiamos para todos los asteroides
-	la $t0, asteroid1InField #asteroide 1
-	jal cleanAsteroid
-	addi $t0, $t0, 5  #Asteroide 2
-	jal cleanAsteroid
-	addi $t0, $t0, 5  #Asteroide 3
-	jal cleanAsteroid
-	addi $t0, $t0, 5  #Asteroide 4
-	jal cleanAsteroid
-
-	
-	#Se actualiza la informacion de todos los asteroides
-	la $t0, asteroid1InField  #Asteroide 1
-	jal updateAsteroid
-	addi $t0, $t0, 5  #Asteroide 2
-	jal updateAsteroid
-	addi $t0, $t0, 5  #Asteroide 3
-	jal updateAsteroid
-	addi $t0, $t0, 5  #Asteroide 4
-	jal updateAsteroid
-	
-	#Se insertan todos los asteroides en el grid
-	la $t0, asteroid1InField  #Asteroide 1
-	jal printAsteroid
-	addi $t0, $t0, 5  #Asteroide 2
-	jal printAsteroid
-	addi $t0, $t0, 5  #Asteroide 3
-	jal printAsteroid
-	addi $t0, $t0, 5  #Asteroide 4
-	jal printAsteroid
-
-sleep:
-	#Se calcula el delta temporal para el sleep
-	li $t1, 200
-	
-	li $v0, 30
-	syscall
-	move $t9, $a0
-	
-	sub $t8, $t9, $t8
-	sub $t8, $t1, $t8
-	bltz $t8, printFrame
-	
-	li $v0, 32
-	move $a0, $t8
-	syscall
-	
-printFrame:
-	la $a0, grid
-	li $v0, 4
-	syscall
-	j loop

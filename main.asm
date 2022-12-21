@@ -137,6 +137,35 @@ updateGrid:
 	lw	$ra, 0($sp)
 	addi	$sp, $sp, 4
 	
+	# Se limpian todos los asteroides
+	la $t0, asteroid1InField	#Asteroide 1
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal cleanAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 2
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal cleanAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 3
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal cleanAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 4
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal cleanAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
 	# Actualizamos la posiccion e los elementos
 	addi 	$sp, $sp, -4
 	sw	$ra, 0($sp)
@@ -149,6 +178,35 @@ updateGrid:
 	jal 	updateLive		# se actualiza la nueva posicion de la vida
 	lw	$ra, 0($sp)
 	addi	$sp, $sp, 4
+	
+	#Se actualiza la posicion de todos los asteroides
+	la $t0, asteroid1InField	#Asteroide 1
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal updateAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 2
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal updateAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 3
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal updateAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 4
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal updateAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
 	
 	######################### se escribe en el campo la vida
 	# verificamos que haya una vida
@@ -169,6 +227,35 @@ updateGrid:
 	sb	$t1, ($t0)		
 
 printPlayer: 	
+
+	#Se insertan en el string los asteroides
+	la $t0, asteroid1InField	#Asteroide 1
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal printAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 2
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal printAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 3
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal printAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	addi $t0, $t0, 5		#Asteroide 4
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal printAsteroid
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
 	######################### se escribe en el campo la nave
 	la 	$t0, playerPos
 	lb 	$t1, ($t0)		# $t1 = player.row
@@ -201,9 +288,8 @@ collisions:
 	beq	$t3, $t4, collisionLive
 	#
 	# aqui iria lo de la nave
-	#
-	#
-	#
+	li $t4, 76  #Se carga el ASCII del asteroride
+	beq $t3, $t4, collisionAsteroid
 	jr	$ra	# la colision ocurrio con la misma nave
 collisionLive:
 	# se le suma una vida al jugador, se limpia la vida y se elimina la vida existente
@@ -224,6 +310,30 @@ collisionLive:
 	addi	$sp, $sp, 4
 	
 	jr 	$ra
+	
+collisionAsteroid:
+	#Se le resta una vida al jugador
+	la $t3, playerLives
+	lb $t4, ($t3)
+	addi $t4, $t4, -1
+	sb $t4, ($t3)
+	
+	addi	$sp, $sp, -4
+	sw	$ra ($sp)
+	jal 	cleanPlayer
+	lw	$ra, ($sp)
+	addi	$sp, $sp, 4
+	
+	#Se vuelve a colocar al jugador en el centro del campo
+	li $t3, 5
+	la $t4, playerPos
+	sb $t3, ($t4)
+	li $t3, 12
+	addi $t4, $t4, 1
+	sb $t3, ($t4)
+	
+	jr $ra
+	
 	
 	
 	
@@ -291,7 +401,14 @@ main:
 loop:
 	addi	$a3, $a3, 1		# aumentamos el puntaje
 	
-	li	$t0, 300
+	li $t0, 25  #Se verifica si hay que crear un asteroide
+	div $a3, $t0
+	mfhi $t0
+	bnez $t0, continueLoop
+	
+	jal createAsteroid
+	
+	li	$t0, 300  #Se verifica si hay que generar una vida
 	div	$a3, $t0
 	mfhi	$t0
 	bnez	$t0, continueLoop
@@ -307,7 +424,7 @@ continueLoop:
 	jal 	updateGrid			
 	jal 	printScore
 	jal 	printGrid
-	jal 	printRefresh	
+	#jal 	printRefresh	
 	
 	li	$v0, 30
 	syscall			# time
@@ -334,7 +451,10 @@ endLoop:
 	li	$v0, 1
 	syscall
 	li 	$t0, 1
+	li $v0, 10
+	syscall
 	
 # Incluimos los demas archivos
 .include "controlPlayer.asm"
 .include "lives.asm"
+.include "asteroids.asm"
